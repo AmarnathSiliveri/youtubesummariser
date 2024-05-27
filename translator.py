@@ -6,7 +6,8 @@ import os
 import google.generativeai as genai
 from streamlit_option_menu import option_menu
 from streamlit_markmap import markmap
-
+from streamlit_lottie import st_lottie
+import json
 # Load environment variables
 load_dotenv()
 
@@ -15,21 +16,9 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 #streamlit app
 st.set_page_config(page_title="YOUTUBE VIDEO NOTES GENERATOR", page_icon='📜')  # page title
 st.markdown('<meta name="viewport" content="width=device-width, initial-scale=1.0">', unsafe_allow_html=True)
-#image is converted into base64 format as streamlit doest allow you to use static images from locals.
-# Define CSS styling
-page_bg = """
-<style>
-[data-testid='stAppViewContainer'] {
-    background-image: url("https://images.unsplash.com/photo-1567201864585-6baec9110dac?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8d2hpdGV8ZW58MHx8MHx8fDA%3D");
-    background-size: cover;
-}
-[data-testid="stHeader"] {
-background-color: rgba(0,0,0,0);
-}
-</style>
-"""
 
-st.markdown(page_bg,unsafe_allow_html=True)
+
+
 
 # Initialize session state variables
 if 'transcript_text' not in st.session_state:
@@ -53,9 +42,8 @@ prompt1 = """As a YouTube video summarizer, your task is to analyze the provided
 
 Please produce the summary based on the following transcript:"""
 
-promptM = """
-Generate a detailed markdown code for the provided summary with the following elements:
-A title suitable for the summary given below and a clear main topic and logically connected subtopics. Make sure every main topic has subtopics and every subtopic has appropriate content make bullet points. Also, provide Hyperlinks for additional information on topics needing explanation. Use emojis to increase the readability of the code when executed
+promptM = """Generate a detailed markdown code for the provided summary with the following elements:
+A title suitable for the summary given below and a clear main topic and logically connected subtopics. Make sure every main topic has subtopics and every subtopic has appropriate content make bullet points. Also, provide Hyperlinks for additional information
 Here is the provided summary:
 """
 app = option_menu(
@@ -67,22 +55,27 @@ app = option_menu(
                 default_index=0,
                 orientation="horizontal",
                 styles={
-                    "container": {"padding": "2!important","background-color":'#434350'},
+                    "container": {"padding": "2!important","background-color":'#grey'},
         "icon": {"color": "white", "font-size": "20px"}, 
         "nav-link": {"color":"white","font-size": "20px", "text-align": "left", "margin":"0px", "--hover-color": "#FDDE55"},
         "nav-link-selected": {"background-color": "#40A578"},
         } 
         )
+
+def load_lottiefiles(filepath: str):
+    with open(filepath, 'r') as f:
+        return json.load(f)
+
 if app =="INTRO":
-    st.markdown("""# <span style='color:#FFFFFF'>Welcome to My Streamlit App *YOUTUBE VIDEO  TO NOTES GENERATOR*</span>""", unsafe_allow_html=True)
+    st.markdown("""# <span style='color:#022302'>Welcome to My Streamlit App *YOUTUBE VIDEO  TO NOTES GENERATOR*</span>""", unsafe_allow_html=True)
 
-    st.markdown("""### <span style='color:#FDDE55'> Based on Gemini-PRO LLM API FROM GOOGLE</span>""", unsafe_allow_html=True)
+    st.markdown("""> ### <span style='color:#0DB386'> Based on Gemini-PRO LLM API FROM GOOGLE</span>""", unsafe_allow_html=True)
     
-    st.markdown("""## <span style='color:#FFF5EE'>Introduction</span>""", unsafe_allow_html=True)
+    st.markdown("""## <span style='color:#022302'>Introduction</span>""", unsafe_allow_html=True)
 
-    st.markdown(""" > ##### <span style='color:#FDDE55'>This is YOUTUBE VIDEO NOTES GENERATOR converts youtube video into a notes generator also included with translation capabilities </span>""", unsafe_allow_html=True)
+    st.markdown(""" > #### <span style='color:#0DB386'>This is YOUTUBE VIDEO NOTES GENERATOR converts youtube video into a notes generator also included with translation capabilities </span>""", unsafe_allow_html=True)
 
-    st.markdown("""## <span style='color:#FFF5EE'>What is YOUTUBE VIDEO NOTES GENERATOR ? </span>""", unsafe_allow_html=True)
+    st.markdown("""## <span style='color:#22302'>What is YOUTUBE VIDEO NOTES GENERATOR ? </span>""", unsafe_allow_html=True)
 
     st.markdown("""
         <div style='font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; font-size: 20px;'>
@@ -92,7 +85,8 @@ if app =="INTRO":
                     <br>
             📝 The transcript is analyzed using the Gemini-PRO LLM API to generate comprehensive notes.
                     <br>
-            🚀 With features like detailed summaries and key insights, it transforms video content into easily digestible information.
+            🚀 With features like detailed summaries and key insights, it transforms video content into easily digestible information and 
+                mindmaps.
                     <br>
             🌐 Supports multiple languages, making it accessible for a global audience.
                     <br>
@@ -105,17 +99,15 @@ if app =="INTRO":
 
 if app == "YT NOTES":
 
-    tab1,tab2=st.tabs(["Summary "," Mindmap "])
+    tab1,tab2=st.tabs([" 🔑📝Summary "," 💡🌿Mindmap "])
     with tab1:
         # Function to extract transcript details from YouTube video
         def extract_transcript_details(youtube_video_url):
             try:
-                video_id = youtube_video_url.split("=")[1]
+                video_id = youtube_video_url.split("v=")[1].split("&")[0]
                 transcript_text = YouTubeTranscriptApi.get_transcript(video_id)
-
                 transcript = " ".join([i["text"] for i in transcript_text])
                 return transcript
-
             except Exception:
                 st.warning("Please provide a valid YouTube video URL.")
                 return None
@@ -139,42 +131,54 @@ if app == "YT NOTES":
         
         # Streamlit app
         st.title("YouTube video  to Detailed Notes ")
-        st.markdown("### <span style='color:#FDDE55'>Convert  **Youtube Video**  to **TEXT** on clicking *Get Detailed Notes* summary/notes is generated</span>",unsafe_allow_html=True)
+        st.markdown("### <span style='color:#0DB386'>Convert  **Youtube Video**  to **TEXT** on clicking *Get Detailed Notes* summary/notes is generated</span>",unsafe_allow_html=True)
         with st.expander(" 👆 Click it"):
             st.warning("hey people ",icon="👋")
             st.warning("after note generation",icon="📝")
             st.warning("Click Translate to translate the summary  into a language of your comfort by clicking dropdown menu ",icon="⬇️")
 
-
         # Input fields
         youtube_link = st.text_input("Enter YouTube Video Link:")
+        
 
         # Display thumbnail
         if youtube_link:
             video_link = youtube_link.split("=")[1]
-            st.image(f"http://img.youtube.com/vi/{video_link}/0.jpg", use_column_width=True)
+            #st.image(f"http://img.youtube.com/vi/{video_link}/0.jpg", use_column_width=True)
+            st.video(youtube_link)
+
 
         # Generate detailed notes
-        if st.button(" 🕹️ Generate Notes"):
+        if st.button(" 🕹️ Generate Notes",use_container_width=True):
             transcript_text = extract_transcript_details(youtube_link)
             if transcript_text:
                 summary = generate_gemini_content(transcript_text, prompt1)
                 st.session_state['transcript_text'] = transcript_text
                 st.session_state['summary'] = summary
+
         with st.container():
             if st.session_state['summary']:
                 st.markdown("## Detailed Notes:")
                 st.markdown(
                 f"""
-                <div style="font-family: 'Arial', 'Roborto Mono',monospace; font-size: 22px; color: #0000;">
+                <div style="font-family: 'Arial', 'Roborto Mono',monospace; font-size: 22px; color: #000;">
                     {st.session_state['summary']}
                 </div>
                 """,
                 unsafe_allow_html=True
             )
-                
+            if st.session_state['summary']:
+                st.download_button(
+                label="⬇️Download summary",
+                data=(st.session_state["summary"].encode('utf-8')),
+                file_name="summary.txt",
+                mime="text/plain",use_container_width=True,help="🥁Downloads the entire generated summary"
+            )
+        
+
+   
             
-                with st.expander("Translate"):
+        with st.expander("Translate"):
                     language_names = {
                         "en": "English", "te": "Telugu","hi": "Hindi", "bn": "Bengali", "gu": "Gujarati", "kn": "Kannada",
                         "ml": "Malayalam", "mr": "Marathi", "pa": "Punjabi", "ta": "Tamil",
@@ -182,14 +186,26 @@ if app == "YT NOTES":
                         "ja": "Japanese","ru": "Russian","ar": "Arabic","pt": "Portuguese",
                         "it": "Italian","ko": "Korean","tr": "Turkish","vi": "Vietnamese","fa": "Persian","th": "Thai"
                     }
-                    target_language = st.selectbox("Select target language:", list(language_names.values()))
+                    target_language = st.selectbox("Select target language:", list(language_names.values()),help="Choose a Language of Your Comfort")
+                    
 
-                    if st.button(" 🎛️ Translate Summary"):
+                    if st.button(" 🎛️ Translate NOTES", use_container_width=True):
                         target_language_code = list(language_names.keys())[list(language_names.values()).index(target_language)]
                         translated_text = translate_text(st.session_state['summary'], target_language_code)
                         st.session_state['translated_text'] = translated_text
 
-                    st.text_area("Translated Text", value=st.session_state['translated_text'], height=500)
+                    if st.session_state['translated_text']:
+                        st.markdown(st.session_state['translated_text'])
+                        st.download_button(
+                            label="⬇️Download Translated Summary",
+                            data=st.session_state['translated_text'].encode('utf-8'),
+                            file_name=f"{target_language} translated_summary.txt",
+                            mime="text/plain",
+                            use_container_width=True,
+                            help="🥁 Downloads the entire Translated summary",
+                        )
+
+                    
     with tab2:
          # Generate and display mind map
 
@@ -198,43 +214,39 @@ if app == "YT NOTES":
             video_id = youtube_link.split("v=")[1].split("&")[0]
             st.image(f"http://img.youtube.com/vi/{video_id}/0.jpg", use_column_width=True)
 
-
-        if st.button(" 🕹️ Generate Mind Map"):
-            if st.session_state['summary']:
-                mindmap_summary = generate_gemini_content_mindmap(st.session_state['summary'], promptM)
-                
+        if st.button("🕹️ Generate Mind Map", use_container_width=True, help="🥁 CLICK TO GENERATE MINDMAP"):
+            if st.session_state.get('summary'):
+                mindmap_summary = generate_gemini_content_mindmap(st.session_state['summary'],promptM)
                 st.session_state['mindmaptext'] = mindmap_summary
-                data = f'''+{mindmap_summary}+'''
-                st.success("mindmap is Generated",icon="✅")
-                st.warning("Click Translate Mindmap to get mindmap in various formats",icon="🎛️")
+                data = f'{{"nodes": ["{mindmap_summary}"]}}'
+                st.success("Mindmap is Generated", icon="✅")
+                st.warning("Click Translate Mindmap to get mindmap in various formats", icon="🎛️")
                 st.balloons()
 
-
- 
-
         with st.container():
-            language_names = {
-                "en": "English","te": "Telugu", "hi": "Hindi", "bn": "Bengali", "gu": "Gujarati", "kn": "Kannada",
-                "ml": "Malayalam", "mr": "Marathi", "pa": "Punjabi", "ta": "Tamil", 
-                "as": "Assamese", "or": "Odia", "ur": "Urdu", "ne": "Nepali", "es": "Spanish", "fr": "French",
-                "de": "German", "it": "Italian", "pt": "Portuguese", "ru": "Russian", "zh": "Chinese", 
-                "ja": "Japanese", "ko": "Korean", "ar": "Arabic", "tr": "Turkish", "vi": "Vietnamese",
-                "th": "Thai", "ms": "Malay", "id": "Indonesian", "fa": "Persian"
-            }
-            target_language = st.selectbox("Select language:", list(language_names.values()))
+                language_names = {
+                    "en": "English", "te": "Telugu", "hi": "Hindi", "bn": "Bengali", "gu": "Gujarati", "kn": "Kannada",
+                    "ml": "Malayalam", "mr": "Marathi", "pa": "Punjabi", "ta": "Tamil",
+                    "as": "Assamese", "or": "Odia", "ur": "Urdu", "ne": "Nepali", "es": "Spanish", "fr": "French",
+                    "de": "German", "it": "Italian", "pt": "Portuguese", "ru": "Russian", "zh": "Chinese",
+                    "ja": "Japanese", "ko": "Korean", "ar": "Arabic", "tr": "Turkish", "vi": "Vietnamese",
+                    "th": "Thai", "ms": "Malay", "id": "Indonesian", "fa": "Persian"
+                }
+                target_language = st.selectbox("Select language:", list(language_names.values()),help="chooose language of your comfort")
 
-            if st.button(" 🎛️ Translate Mindmap"):
-                target_language_code = list(language_names.keys())[list(language_names.values()).index(target_language)]
-                translated_mindmap = translate_text(st.session_state['mindmaptext'], target_language_code)
-                st.session_state['translated_text_mindmap'] = translated_mindmap
-               
-                tdata = st.session_state['translated_text_mindmap']
-                markmap(tdata,height=1080) 
-        
+        if st.button("🎛️ Translate Mindmap"):
+                    target_language_code = list(language_names.keys())[list(language_names.values()).index(target_language)]
+                    translated_mindmap = translate_text(st.session_state['mindmaptext'], target_language_code)
+                    st.session_state['translated_text_mindmap'] = translated_mindmap
+
+                    tdata = st.session_state['translated_text_mindmap']
+                    
+                    markmap(tdata,height=800)
 
 
 if app == 'CREDITS':
-    
+    lottie_credit = load_lottiefiles(r"E:\pythonmlprojects\youtube_summariser\thankyou bymonkeymoji (1).json")
+    st_lottie(lottie_credit, loop=True,quality="high", speed=1.45, key=None, height=350)
     st.balloons()
     st.title("CRAFTED BY :")
     st.subheader("AMARNATH SILIVERI")
