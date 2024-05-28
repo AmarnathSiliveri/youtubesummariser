@@ -1,18 +1,15 @@
 import streamlit as st
 from deep_translator import GoogleTranslator
 from youtube_transcript_api import YouTubeTranscriptApi
-from dotenv import load_dotenv
-import os
 import google.generativeai as genai
 from streamlit_option_menu import option_menu
 from streamlit_markmap import markmap
 from streamlit_lottie import st_lottie
 import json
-# Load environment variables
-load_dotenv()
+
 
 # Configure Google API
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+genai.configure(api_key=st.secrets(API_KEY))
 #streamlit app
 st.set_page_config(page_title="YOUTUBE VIDEO NOTES GENERATOR", page_icon='📜')  # page title
 st.markdown('<meta name="viewport" content="width=device-width, initial-scale=1.0">', unsafe_allow_html=True)
@@ -245,7 +242,7 @@ if app == "YT NOTES":
 
 
 if app == 'CREDITS':
-    lottie_credit = load_lottiefiles(r"E:\pythonmlprojects\youtube_summariser\thankyou bymonkeymoji (1).json")
+    lottie_credit = load_lottiefiles(r"thankyou bymonkeymoji (1).json")
     st_lottie(lottie_credit, loop=True,quality="high", speed=1.45, key=None, height=350)
     st.balloons()
     st.title("CRAFTED BY :")
