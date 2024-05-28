@@ -9,7 +9,8 @@ import json
 
 
 # Configure Google API
-genai.configure(api_key=st.secrets(API_KEY))
+
+genai.configure(api_key=st.secrets['API_KEY'])
 #streamlit app
 st.set_page_config(page_title="YOUTUBE VIDEO NOTES GENERATOR", page_icon='📜')  # page title
 st.markdown('<meta name="viewport" content="width=device-width, initial-scale=1.0">', unsafe_allow_html=True)
