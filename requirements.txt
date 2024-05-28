@@ -1,0 +1,8 @@
+streamlit 
+deep_translator 
+youtube_transcript_api 
+streamlit-markmap
+streamlit-lottie==0.0.5
+streamlit-option-menu==0.3.6
+google-generativeai
+
