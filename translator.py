@@ -186,7 +186,7 @@ if app == "YT NOTES":
             
         # Function to generate markdown code for markmap function to generate mindmap using gemini model
         def generate_gemini_content_mindmap(summary, promptM):
-            model = genai.GenerativeModel("gemini-pro")
+            model = genai.GenerativeModel("gemini-2.0-pro-exp-02-05")
             response = model.generate_content(promptM + summary + " ")
             return response.text
 
