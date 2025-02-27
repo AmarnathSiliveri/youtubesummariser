@@ -192,9 +192,55 @@ if app == "YT NOTES":
 
         # Function to generate translations
         def translate_text(text, target_language):
-            translator = GoogleTranslator(source='auto', target=target_language)
-            translated_text = translator.translate(text)
-            return translated_text
+            try:
+                translator = GoogleTranslator(source='auto', target=target_language)
+                
+                # Check if text is longer than the 5000 character limit
+                if len(text) <= 5000:
+                    # If text is within limits, translate it directly
+                    return translator.translate(text)
+                else:
+                    # If text is too long, split it into chunks of 4500 characters
+                    # (leaving some margin below the 5000 limit)
+                    chunks = []
+                    chunk_size = 4500
+                    
+                    # Split by sentences to avoid cutting in the middle of sentences when possible
+                    import re
+                    sentences = re.split('(?<=[.!?])\s+', text)
+                    
+                    current_chunk = ""
+                    for sentence in sentences:
+                        # If adding this sentence would exceed chunk size, add current chunk to results
+                        if len(current_chunk) + len(sentence) + 1 > chunk_size and current_chunk:
+                            chunks.append(current_chunk)
+                            current_chunk = sentence
+                        else:
+                            if current_chunk:
+                                current_chunk += " " + sentence
+                            else:
+                                current_chunk = sentence
+                    
+                    # Add the last chunk if it's not empty
+                    if current_chunk:
+                        chunks.append(current_chunk)
+                    
+                    # If we couldn't split by sentences properly, fall back to character chunking
+                    if not chunks:
+                        chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+                    
+                    # Translate each chunk and join them
+                    translated_chunks = []
+                    for chunk in chunks:
+                        translated_chunk = translator.translate(chunk)
+                        translated_chunks.append(translated_chunk)
+                    
+                    # Join all translated chunks
+                    return " ".join(translated_chunks)
+
+    except Exception as e:
+        st.error(f"Translation error: {str(e)}")
+        return f"Error translating text: {str(e)}"
         
         # Streamlit app
         st.title("YouTube video  to Detailed Notes ")
