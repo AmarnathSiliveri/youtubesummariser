@@ -6,7 +6,8 @@ from streamlit_option_menu import option_menu
 from streamlit_markmap import markmap
 from streamlit_lottie import st_lottie
 import json
-
+import re
+from urllib.parse import urlparse, parse_qs
 
 # Configure Google API
 
@@ -97,17 +98,84 @@ if app =="INTRO":
 
 if app == "YT NOTES":
 
+    def extract_video_id(youtube_url):
+    """
+    Extract the video ID from various YouTube URL formats.
+    
+    Supported formats include:
+    - Standard: https://www.youtube.com/watch?v=VIDEO_ID
+    - Short: https://youtu.be/VIDEO_ID
+    - Mobile: https://m.youtube.com/watch?v=VIDEO_ID
+    - Embedded: https://www.youtube.com/embed/VIDEO_ID
+    - With playlist: https://www.youtube.com/watch?v=VIDEO_ID&list=PLAYLIST_ID
+    - Mobile app share: youtube://VIDEO_ID
+    
+    Returns:
+        str: YouTube video ID if successful, None otherwise
+    """
+    if not youtube_url:
+        return None
+    
+    # Clean the URL (remove extra spaces, etc.)
+    youtube_url = youtube_url.strip()
+    
+    # Case 1: youtu.be/VIDEO_ID format
+    if 'youtu.be' in youtube_url:
+        parsed_url = urlparse(youtube_url)
+        video_id = parsed_url.path.lstrip('/')
+        return video_id.split('?')[0]  # Remove any query parameters
+    
+    # Case 2: youtube://VIDEO_ID format (from mobile app)
+    elif youtube_url.startswith('youtube://'):
+        return youtube_url.split('youtube://')[1].split('?')[0]
+    
+    # Case 3: /embed/ format
+    elif '/embed/' in youtube_url:
+        parsed_url = urlparse(youtube_url)
+        video_id = parsed_url.path.split('/embed/')[1]
+        return video_id.split('?')[0]  # Remove any query parameters
+    
+    # Case 4: Standard v= parameter format
+    elif 'youtube.com' in youtube_url or 'm.youtube.com' in youtube_url:
+        parsed_url = urlparse(youtube_url)
+        query_params = parse_qs(parsed_url.query)
+        
+        if 'v' in query_params:
+            return query_params['v'][0]
+    
+    # Case 5: Try regex as fallback for any other format
+    else:
+        regex_patterns = [
+            r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',
+            r'(?:youtube\.com\/watch\?v=)([^&]+)',
+            r'(?:youtu\.be\/)([^?]+)'
+        ]
+        
+        for pattern in regex_patterns:
+            match = re.search(pattern, youtube_url)
+            if match:
+                return match.group(1)
+    
+    # If no pattern matches, return None
+    return None
+
     tab1,tab2=st.tabs([" 🔑📝Summary "," 💡🌿Mindmap "])
     with tab1:
+        # Import the extract_video_id function or include it in your code
+        
         # Function to extract transcript details from YouTube video
         def extract_transcript_details(youtube_video_url):
             try:
-                video_id = youtube_video_url.split("v=")[1].split("&")[0]
+                video_id = extract_video_id(youtube_video_url)
+                if not video_id:
+                    st.warning("Could not extract video ID. Please provide a valid YouTube video URL.")
+                    return None
+                    
                 transcript_text = YouTubeTranscriptApi.get_transcript(video_id)
                 transcript = " ".join([i["text"] for i in transcript_text])
                 return transcript
-            except Exception:
-                st.warning("Please provide a valid YouTube video URL.")
+            except Exception as e:
+                st.warning(f"Error extracting transcript: Please provide a valid YouTube video URL. {str(e)}")
                 return None
 
         # Function to generate summary using Gemini model
@@ -115,7 +183,8 @@ if app == "YT NOTES":
             model = genai.GenerativeModel("gemini-pro")
             response = model.generate_content(prompt + transcript_text + " ")
             return response.text
-        # Function to generate markdown code for markmap function to generate mindmap  using gemini model
+            
+        # Function to generate markdown code for markmap function to generate mindmap using gemini model
         def generate_gemini_content_mindmap(summary, promptM):
             model = genai.GenerativeModel("gemini-pro")
             response = model.generate_content(promptM + summary + " ")
@@ -138,24 +207,27 @@ if app == "YT NOTES":
         # Input fields
         youtube_link = st.text_input("Enter YouTube Video Link:")
         
-
-        # Display thumbnail
+        # Display video - safely handling all types of YouTube links
         if youtube_link:
-            video_link = youtube_link.split("=")[1]
-            #st.image(f"http://img.youtube.com/vi/{video_link}/0.jpg", use_column_width=True)
-            st.video(youtube_link)
-
+            video_id = extract_video_id(youtube_link)
+            if video_id:
+                st.video(f"https://www.youtube.com/watch?v={video_id}")
+            else:
+                st.warning("Could not extract video ID from the provided link.")
 
         # Generate detailed notes
         if st.button(" 🕹️ Generate Notes",use_container_width=True):
-            transcript_text = extract_transcript_details(youtube_link)
-            if transcript_text:
-                summary = generate_gemini_content(transcript_text, prompt1)
-                st.session_state['transcript_text'] = transcript_text
-                st.session_state['summary'] = summary
+            with st.spinner("Extracting transcript and generating notes..."):
+                transcript_text = extract_transcript_details(youtube_link)
+                if transcript_text:
+                    summary = generate_gemini_content(transcript_text, prompt1)
+                    st.session_state['transcript_text'] = transcript_text
+                    st.session_state['summary'] = summary
+                else:
+                    st.error("Could not extract transcript. Please check your YouTube link.")
 
         with st.container():
-            if st.session_state['summary']:
+            if 'summary' in st.session_state and st.session_state['summary']:
                 st.markdown("## Detailed Notes:")
                 st.markdown(
                 f"""
@@ -165,7 +237,7 @@ if app == "YT NOTES":
                 """,
                 unsafe_allow_html=True
             )
-            if st.session_state['summary']:
+            if 'summary' in st.session_state and st.session_state['summary']:
                 st.download_button(
                 label="⬇️Download summary",
                 data=(st.session_state["summary"].encode('utf-8')),
@@ -173,8 +245,9 @@ if app == "YT NOTES":
                 mime="text/plain",use_container_width=True,help="🥁Downloads the entire generated summary"
             )
         
-
-   
+        # Initialize session state variables if they don't exist
+        if 'translated_text' not in st.session_state:
+            st.session_state['translated_text'] = ""
             
         with st.expander("Translate"):
                     language_names = {
@@ -186,11 +259,13 @@ if app == "YT NOTES":
                     }
                     target_language = st.selectbox("Select target language:", list(language_names.values()),help="Choose a Language of Your Comfort")
                     
-
                     if st.button(" 🎛️ Translate NOTES", use_container_width=True):
-                        target_language_code = list(language_names.keys())[list(language_names.values()).index(target_language)]
-                        translated_text = translate_text(st.session_state['summary'], target_language_code)
-                        st.session_state['translated_text'] = translated_text
+                        if 'summary' in st.session_state and st.session_state['summary']:
+                            target_language_code = list(language_names.keys())[list(language_names.values()).index(target_language)]
+                            translated_text = translate_text(st.session_state['summary'], target_language_code)
+                            st.session_state['translated_text'] = translated_text
+                        else:
+                            st.warning("Please generate notes first before translating.")
 
                     if st.session_state['translated_text']:
                         st.markdown(st.session_state['translated_text'])
@@ -203,23 +278,32 @@ if app == "YT NOTES":
                             help="🥁 Downloads the entire Translated summary",
                         )
 
-                    
     with tab2:
-         # Generate and display mind map
-
-        # Display thumbnail
+        # Initialize mindmap session state if needed
+        if 'mindmaptext' not in st.session_state:
+            st.session_state['mindmaptext'] = ""
+        if 'translated_text_mindmap' not in st.session_state:
+            st.session_state['translated_text_mindmap'] = ""
+             
+        # Display thumbnail safely 
         if youtube_link:
-            video_id = youtube_link.split("v=")[1].split("&")[0]
-            st.image(f"http://img.youtube.com/vi/{video_id}/0.jpg", use_column_width=True)
+            video_id = extract_video_id(youtube_link)
+            if video_id:
+                st.image(f"http://img.youtube.com/vi/{video_id}/0.jpg", use_column_width=True)
+            else:
+                st.warning("Could not extract video ID from the provided link.")
 
         if st.button("🕹️ Generate Mind Map", use_container_width=True, help="🥁 CLICK TO GENERATE MINDMAP"):
-            if st.session_state.get('summary'):
-                mindmap_summary = generate_gemini_content_mindmap(st.session_state['summary'],promptM)
-                st.session_state['mindmaptext'] = mindmap_summary
-                data = f'{{"nodes": ["{mindmap_summary}"]}}'
-                st.success("Mindmap is Generated", icon="✅")
-                st.warning("Click Translate Mindmap to get mindmap in various formats", icon="🎛️")
-                st.balloons()
+            if 'summary' in st.session_state and st.session_state.get('summary'):
+                with st.spinner("Generating mind map..."):
+                    mindmap_summary = generate_gemini_content_mindmap(st.session_state['summary'], promptM)
+                    st.session_state['mindmaptext'] = mindmap_summary
+                    data = f'{{"nodes": ["{mindmap_summary}"]}}'
+                    st.success("Mindmap is Generated", icon="✅")
+                    st.warning("Click Translate Mindmap to get mindmap in various formats", icon="🎛️")
+                    st.balloons()
+            else:
+                st.warning("Please generate notes first in the Summary tab.")
 
         with st.container():
                 language_names = {
@@ -230,16 +314,19 @@ if app == "YT NOTES":
                     "ja": "Japanese", "ko": "Korean", "ar": "Arabic", "tr": "Turkish", "vi": "Vietnamese",
                     "th": "Thai", "ms": "Malay", "id": "Indonesian", "fa": "Persian"
                 }
-                target_language = st.selectbox("Select language:", list(language_names.values()),help="chooose language of your comfort")
+                target_language = st.selectbox("Select language:", list(language_names.values()), help="choose language of your comfort")
 
         if st.button("🎛️ Translate Mindmap"):
+                if 'mindmaptext' in st.session_state and st.session_state['mindmaptext']:
                     target_language_code = list(language_names.keys())[list(language_names.values()).index(target_language)]
                     translated_mindmap = translate_text(st.session_state['mindmaptext'], target_language_code)
                     st.session_state['translated_text_mindmap'] = translated_mindmap
 
                     tdata = st.session_state['translated_text_mindmap']
                     
-                    markmap(tdata,height=800)
+                    markmap(tdata, height=800)
+                else:
+                    st.warning("Please generate a mind map first before translating.")
 
 
 if app == 'CREDITS':
