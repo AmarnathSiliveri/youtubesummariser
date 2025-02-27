@@ -180,7 +180,7 @@ if app == "YT NOTES":
 
         # Function to generate summary using Gemini model
         def generate_gemini_content(transcript_text, prompt):
-            model = genai.GenerativeModel("gemini-pro")
+            model = genai.GenerativeModel("gemini-2.0-flash")
             response = model.generate_content(prompt + transcript_text + " ")
             return response.text
             
