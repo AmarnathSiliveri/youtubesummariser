@@ -99,65 +99,65 @@ if app =="INTRO":
 if app == "YT NOTES":
 
     def extract_video_id(youtube_url):
-    """
-    Extract the video ID from various YouTube URL formats.
-    
-    Supported formats include:
-    - Standard: https://www.youtube.com/watch?v=VIDEO_ID
-    - Short: https://youtu.be/VIDEO_ID
-    - Mobile: https://m.youtube.com/watch?v=VIDEO_ID
-    - Embedded: https://www.youtube.com/embed/VIDEO_ID
-    - With playlist: https://www.youtube.com/watch?v=VIDEO_ID&list=PLAYLIST_ID
-    - Mobile app share: youtube://VIDEO_ID
-    
-    Returns:
-        str: YouTube video ID if successful, None otherwise
-    """
-    if not youtube_url:
+        """
+        Extract the video ID from various YouTube URL formats.
+        
+        Supported formats include:
+        - Standard: https://www.youtube.com/watch?v=VIDEO_ID
+        - Short: https://youtu.be/VIDEO_ID
+        - Mobile: https://m.youtube.com/watch?v=VIDEO_ID
+        - Embedded: https://www.youtube.com/embed/VIDEO_ID
+        - With playlist: https://www.youtube.com/watch?v=VIDEO_ID&list=PLAYLIST_ID
+        - Mobile app share: youtube://VIDEO_ID
+        
+        Returns:
+            str: YouTube video ID if successful, None otherwise
+        """
+        if not youtube_url:
+            return None
+        
+        # Clean the URL (remove extra spaces, etc.)
+        youtube_url = youtube_url.strip()
+        
+        # Case 1: youtu.be/VIDEO_ID format
+        if 'youtu.be' in youtube_url:
+            parsed_url = urlparse(youtube_url)
+            video_id = parsed_url.path.lstrip('/')
+            return video_id.split('?')[0]  # Remove any query parameters
+        
+        # Case 2: youtube://VIDEO_ID format (from mobile app)
+        elif youtube_url.startswith('youtube://'):
+            return youtube_url.split('youtube://')[1].split('?')[0]
+        
+        # Case 3: /embed/ format
+        elif '/embed/' in youtube_url:
+            parsed_url = urlparse(youtube_url)
+            video_id = parsed_url.path.split('/embed/')[1]
+            return video_id.split('?')[0]  # Remove any query parameters
+        
+        # Case 4: Standard v= parameter format
+        elif 'youtube.com' in youtube_url or 'm.youtube.com' in youtube_url:
+            parsed_url = urlparse(youtube_url)
+            query_params = parse_qs(parsed_url.query)
+            
+            if 'v' in query_params:
+                return query_params['v'][0]
+        
+        # Case 5: Try regex as fallback for any other format
+        else:
+            regex_patterns = [
+                r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',
+                r'(?:youtube\.com\/watch\?v=)([^&]+)',
+                r'(?:youtu\.be\/)([^?]+)'
+            ]
+            
+            for pattern in regex_patterns:
+                match = re.search(pattern, youtube_url)
+                if match:
+                    return match.group(1)
+        
+        # If no pattern matches, return None
         return None
-    
-    # Clean the URL (remove extra spaces, etc.)
-    youtube_url = youtube_url.strip()
-    
-    # Case 1: youtu.be/VIDEO_ID format
-    if 'youtu.be' in youtube_url:
-        parsed_url = urlparse(youtube_url)
-        video_id = parsed_url.path.lstrip('/')
-        return video_id.split('?')[0]  # Remove any query parameters
-    
-    # Case 2: youtube://VIDEO_ID format (from mobile app)
-    elif youtube_url.startswith('youtube://'):
-        return youtube_url.split('youtube://')[1].split('?')[0]
-    
-    # Case 3: /embed/ format
-    elif '/embed/' in youtube_url:
-        parsed_url = urlparse(youtube_url)
-        video_id = parsed_url.path.split('/embed/')[1]
-        return video_id.split('?')[0]  # Remove any query parameters
-    
-    # Case 4: Standard v= parameter format
-    elif 'youtube.com' in youtube_url or 'm.youtube.com' in youtube_url:
-        parsed_url = urlparse(youtube_url)
-        query_params = parse_qs(parsed_url.query)
-        
-        if 'v' in query_params:
-            return query_params['v'][0]
-    
-    # Case 5: Try regex as fallback for any other format
-    else:
-        regex_patterns = [
-            r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',
-            r'(?:youtube\.com\/watch\?v=)([^&]+)',
-            r'(?:youtu\.be\/)([^?]+)'
-        ]
-        
-        for pattern in regex_patterns:
-            match = re.search(pattern, youtube_url)
-            if match:
-                return match.group(1)
-    
-    # If no pattern matches, return None
-    return None
 
     tab1,tab2=st.tabs([" 🔑📝Summary "," 💡🌿Mindmap "])
     with tab1:
