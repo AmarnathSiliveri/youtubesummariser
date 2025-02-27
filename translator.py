@@ -238,9 +238,9 @@ if app == "YT NOTES":
                     # Join all translated chunks
                     return " ".join(translated_chunks)
 
-    except Exception as e:
-        st.error(f"Translation error: {str(e)}")
-        return f"Error translating text: {str(e)}"
+            except Exception as e:
+                st.error(f"Translation error: {str(e)}")
+                return f"Error translating text: {str(e)}"
         
         # Streamlit app
         st.title("YouTube video  to Detailed Notes ")
